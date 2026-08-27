@@ -1,0 +1,60 @@
+# Managed by Salt - kube-prometheus-stack values.
+{%- set nodes = pillar['cluster']['nodes'] %}
+{%- set monitoring = pillar['monitoring'] %}
+{%- set grafana = monitoring.grafana %}
+{%- set node_exporter_port = monitoring.node_exporter.port %}
+
+grafana:
+  adminUser: {{ grafana.admin_user }}
+  adminPassword: {{ grafana.admin_password }}
+
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hosts:
+      - {{ grafana.hostname }}
+    tls:
+      - hosts:
+          - {{ grafana.hostname }}
+
+  sidecar:
+    dashboards:
+      searchNamespace: ALL
+
+  # File-provider so grafana.com dashboards below get provisioned.
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: default
+          orgId: 1
+          folder: ''
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+
+  dashboards:
+    default:
+      node-exporter-full:
+        gnetId: 1860
+        revision: 37
+        datasource: Prometheus
+
+prometheus:
+  prometheusSpec:
+    # Pick up ServiceMonitors from any Helm release (e.g. the metrics gateway).
+    serviceMonitorSelectorNilUsesHelmValues: false
+    additionalScrapeConfigs:
+      - job_name: hpc-node-exporters
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - '{{ nodes.controller.ip }}:{{ node_exporter_port }}'
+            labels:
+              node: controller
+          - targets:
+              - '{{ nodes.compute.ip }}:{{ node_exporter_port }}'
+            labels:
+              node: compute

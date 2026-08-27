@@ -1,0 +1,15 @@
+FROM docker.io/library/python:3.12-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app.py .
+
+EXPOSE 8000
+USER nobody
+
+# Single worker: the metric registry lives in process memory, so multiple
+# workers would each hold a different (inconsistent) state.
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "1", "--threads", "8", "app:app"]

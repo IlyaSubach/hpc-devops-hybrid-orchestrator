@@ -1,0 +1,6 @@
+apiVersion: v2
+name: slurm-metrics-gateway
+description: REST gateway bridging Slurm job telemetry into Prometheus
+type: application
+version: 0.1.0
+appVersion: '0.1.0'

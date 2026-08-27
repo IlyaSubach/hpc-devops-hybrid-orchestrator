@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Submit the metrics simulation job to Slurm (invoked from cron).
+set -euo pipefail
+
+/usr/bin/sbatch /opt/slurm-jobs/metrics-sim.sbatch

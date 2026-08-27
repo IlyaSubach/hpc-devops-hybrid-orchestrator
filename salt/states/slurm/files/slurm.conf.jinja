@@ -1,0 +1,34 @@
+# Managed by Salt - do not edit by hand.
+{%- set nodes = pillar['cluster']['nodes'] %}
+{%- set slurm = pillar['slurm'] %}
+ClusterName={{ slurm.cluster_name }}
+SlurmctldHost=controller({{ nodes.controller.ip }})
+
+AuthType=auth/munge
+SlurmUser=slurm
+StateSaveLocation=/var/spool/slurmctld
+SlurmdSpoolDir=/var/spool/slurmd
+SlurmctldPort=6817
+SlurmdPort=6818
+ReturnToService=2
+
+# Keep process tracking simple and robust inside VMs.
+ProctrackType=proctrack/linuxproc
+TaskPlugin=task/none
+
+SchedulerType=sched/backfill
+SelectType=select/cons_tres
+SelectTypeParameters=CR_Core_Memory
+
+# Accounting via slurmdbd on the controller.
+AccountingStorageType=accounting_storage/slurmdbd
+AccountingStorageHost=controller
+JobAcctGatherType=jobacct_gather/linux
+
+SlurmctldLogFile=/var/log/slurm/slurmctld.log
+SlurmdLogFile=/var/log/slurm/slurmd.log
+SlurmctldDebug=info
+SlurmdDebug=info
+
+NodeName=compute NodeAddr={{ nodes.compute.ip }} CPUs={{ slurm.compute.cpus }} RealMemory={{ slurm.compute.real_memory }} State=UNKNOWN
+PartitionName=main Nodes=compute Default=YES MaxTime=INFINITE State=UP

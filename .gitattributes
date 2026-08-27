@@ -1,0 +1,5 @@
+# Everything that runs inside the Linux guests must keep LF endings,
+# even when the repo is cloned on Windows.
+* text=auto eol=lf
+*.png binary
+*.jpg binary

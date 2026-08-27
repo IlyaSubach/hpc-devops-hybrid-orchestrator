@@ -1,0 +1,43 @@
+#!/bin/bash
+#SBATCH --job-name=metrics-sim
+#SBATCH --output=/tmp/metrics-sim-%j.log
+#SBATCH --time=00:02:00
+#
+# Simulates CPU/GPU/memory load for ~1 minute and reports it to the
+# Prometheus metrics gateway every few seconds, labelled with the real
+# Slurm job id and execution node.
+{%- set nodes = pillar['cluster']['nodes'] %}
+{%- set gateway = pillar['gateway'] %}
+{%- set job = pillar['metrics_job'] %}
+
+set -u
+
+GATEWAY_URL="http://{{ nodes.compute.ip }}:{{ gateway.node_port }}"
+DURATION={{ job.duration_seconds }}
+INTERVAL={{ job.interval_seconds }}
+
+JOB_ID="${SLURM_JOB_ID:-unknown}"
+NODE="${SLURMD_NODENAME:-$(hostname)}"
+
+send_metric() {
+    local name="$1" value="$2"
+    curl -fsS -X PUT "${GATEWAY_URL}/update-metric" \
+        -H 'Content-Type: application/json' \
+        -d "{\"name\":\"${name}\",\"value\":${value},\"labels\":{\"slurm_job_id\":\"${JOB_ID}\",\"node\":\"${NODE}\"}}" \
+        || echo "WARN: failed to push ${name}" >&2
+}
+
+end=$((SECONDS + DURATION))
+while [ "${SECONDS}" -lt "${end}" ]; do
+    cpu=$(awk -v s="${RANDOM}" 'BEGIN { srand(s); printf "%.1f", 20 + rand() * 80 }')
+    gpu=$(awk -v s="${RANDOM}" 'BEGIN { srand(s); printf "%.1f", rand() * 100 }')
+    mem=$(awk -v s="${RANDOM}" 'BEGIN { srand(s); printf "%.0f", 256 + rand() * 3584 }')
+
+    send_metric "slurm_job_cpu_percent" "${cpu}"
+    send_metric "slurm_job_gpu_percent" "${gpu}"
+    send_metric "slurm_job_memory_mb"  "${mem}"
+
+    sleep "${INTERVAL}"
+done
+
+echo "metrics-sim job ${JOB_ID} on ${NODE} finished"

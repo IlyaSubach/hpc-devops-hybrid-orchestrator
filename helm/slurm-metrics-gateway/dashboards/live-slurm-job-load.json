@@ -1,0 +1,100 @@
+{
+  "uid": "slurm-live-load",
+  "title": "Live Slurm Job Load",
+  "tags": ["slurm", "hpc"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "refresh": "5s",
+  "time": { "from": "now-30m", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "job_id",
+        "label": "Slurm Job ID",
+        "type": "query",
+        "query": "label_values(slurm_job_cpu_percent, slurm_job_id)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] }
+      },
+      {
+        "name": "node",
+        "label": "Node",
+        "type": "query",
+        "query": "label_values(slurm_job_cpu_percent, node)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "CPU load (%)",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": { "fillOpacity": 15, "lineWidth": 2 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "slurm_job_cpu_percent{slurm_job_id=~\"$job_id\", node=~\"$node\"}",
+          "legendFormat": "job {{slurm_job_id}} @ {{node}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "GPU load (%)",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": { "fillOpacity": 15, "lineWidth": 2 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "slurm_job_gpu_percent{slurm_job_id=~\"$job_id\", node=~\"$node\"}",
+          "legendFormat": "job {{slurm_job_id}} @ {{node}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Memory (MB)",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 9 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decmbytes",
+          "min": 0,
+          "custom": { "fillOpacity": 15, "lineWidth": 2 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "slurm_job_memory_mb{slurm_job_id=~\"$job_id\", node=~\"$node\"}",
+          "legendFormat": "job {{slurm_job_id}} @ {{node}}"
+        }
+      ]
+    }
+  ]
+}

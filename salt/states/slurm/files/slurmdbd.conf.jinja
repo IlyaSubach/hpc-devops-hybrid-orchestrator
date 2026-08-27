@@ -1,0 +1,15 @@
+# Managed by Salt - do not edit by hand.
+{%- set db = pillar['slurm']['db'] %}
+AuthType=auth/munge
+DbdHost=localhost
+SlurmUser=slurm
+DebugLevel=info
+LogFile=/var/log/slurm/slurmdbd.log
+PidFile=/run/slurmdbd.pid
+
+StorageType=accounting_storage/mysql
+StorageHost=localhost
+StoragePort=3306
+StorageUser={{ db.user }}
+StoragePass={{ salt['pillar.get']('secrets:mariadb:slurm_password') }}
+StorageLoc={{ db.name }}

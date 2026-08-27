@@ -1,0 +1,29 @@
+replicaCount: 1
+
+image:
+  repository: localhost/slurm-metrics-gateway
+  tag: 0.1.0
+  # The image is imported into k3s containerd from the Builder artifact,
+  # never pulled from a registry.
+  pullPolicy: Never
+
+service:
+  type: NodePort
+  port: 8000
+  nodePort: 30080
+
+serviceMonitor:
+  enabled: true
+  # Matches the payload cadence of the Slurm metrics job.
+  interval: 5s
+
+dashboard:
+  # Ship the "Live Slurm Job Load" dashboard via the Grafana sidecar.
+  enabled: true
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 64Mi
+  limits:
+    memory: 128Mi

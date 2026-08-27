@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Build Slurm from source into separated DEB packages using the debian/
+# packaging that ships inside the official Slurm tarball.
+set -euo pipefail
+export DEBIAN_FRONTEND=noninteractive
+
+ARTIFACTS=/vagrant/artifacts/debs
+WORKDIR=/tmp/slurm-build
+VERSION="{{ slurm_version }}"
+
+if [ "${VERSION}" = "latest" ]; then
+    VERSION=$(curl -fsSL https://download.schedmd.com/slurm/ \
+        | grep -oE 'slurm-[0-9]+\.[0-9]+\.[0-9]+\.tar\.bz2' \
+        | sed -E 's/^slurm-([0-9.]+)\.tar\.bz2$/\1/' \
+        | sort -uV | tail -1)
+fi
+
+echo ">>> Building Slurm ${VERSION}"
+rm -rf "${WORKDIR}"
+mkdir -p "${WORKDIR}"
+cd "${WORKDIR}"
+
+curl -fsSLO "https://download.schedmd.com/slurm/slurm-${VERSION}.tar.bz2"
+tar xjf "slurm-${VERSION}.tar.bz2"
+cd "slurm-${VERSION}"
+
+# Install the build dependencies declared by the package itself.
+mk-build-deps -ir \
+    --tool='apt-get -y -o Debug::pkgProblemResolver=yes --no-install-recommends' \
+    debian/control
+
+# Binary-only build, unsigned (local artifacts).
+debuild -b -uc -us
+
+cp ../slurm-smd*.deb "${ARTIFACTS}/"
+touch "${ARTIFACTS}/.build-complete"
+echo ">>> Slurm ${VERSION} DEBs exported to ${ARTIFACTS}"

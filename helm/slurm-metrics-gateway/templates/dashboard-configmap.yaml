@@ -1,0 +1,12 @@
+{{- if .Values.dashboard.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "slurm-metrics-gateway.fullname" . }}-dashboard
+  labels:
+    {{- include "slurm-metrics-gateway.labels" . | nindent 4 }}
+    grafana_dashboard: '1'
+data:
+  live-slurm-job-load.json: |-
+{{ .Files.Get "dashboards/live-slurm-job-load.json" | indent 4 }}
+{{- end }}
