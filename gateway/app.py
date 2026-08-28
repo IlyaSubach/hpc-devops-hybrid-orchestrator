@@ -6,7 +6,6 @@ exposition format.
 """
 
 import re
-import sys
 import threading
 
 from flask import Flask, jsonify, request
